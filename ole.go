@@ -177,6 +177,45 @@ func set(L Lua) int {
 	return 2
 }
 
+func iter(L Lua) int {
+	ud, ok := L.Get(1).(*lua.LUserData)
+	if !ok {
+		return lerror(L, "get: 1st argument is not a userdata.")
+	}
+	p, ok := ud.Value.(*capsuleT)
+	if !ok {
+		return lerror(L, "get: 1st argument is not *capsuleT")
+	}
+	newEnum, err := p.Data.GetProperty("_NewEnum")
+	if err != nil {
+		return lerror(L, err.Error())
+	}
+	enum, err := newEnum.ToIUnknown().IEnumVARIANT(ole.IID_IEnumVariant)
+	if err != nil {
+		return lerror(L, err.Error())
+	}
+
+	L.Push(L.NewFunction(func(LL Lua) int {
+		itemVariant, length, err := enum.Next(1)
+		if err != nil || length <= 0 {
+			enum.Release()
+			newEnum.Clear()
+			LL.Push(lua.LNil)
+			return 1
+		}
+		itemLValue, err := variantToLValue(LL, &itemVariant)
+		if err != nil {
+			enum.Release()
+			newEnum.Clear()
+			LL.Push(lua.LNil)
+			return 1
+		}
+		L.Push(itemLValue)
+		return 1
+	}))
+	return 1
+}
+
 func get(L Lua) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
@@ -228,6 +267,10 @@ func indexSub(L Lua, thisIndex int, nameIndex int) int {
 		return 2
 	case "_get":
 		L.Push(L.NewFunction(get))
+		L.Push(lua.LNil)
+		return 2
+	case "_iter":
+		L.Push(L.NewFunction(iter))
 		L.Push(lua.LNil)
 		return 2
 	default:
