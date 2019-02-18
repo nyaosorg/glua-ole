@@ -28,7 +28,10 @@ func main() {
 	err := L.DoString(`
 		local fsObj = create_object("Scripting.FileSystemObject")
 		local files = fsObj:GetFolder("C:\\"):_get("Files")
-		print(files:_get("Count"))
+		print("count=",files:_get("Count"))
+		for f in files:_iter() do
+			print(f:_get("Name"))
+		end
 	`)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -40,4 +43,5 @@ func main() {
 - `OBJ:method(...)` calls method
 - `OBJ:_get("PROPERTY")` returns the value of the property.
 - `OBJ:_set("PROPERTY",value)` sets the value to the property.
+- `OBJ:_iter()` returns an enumerator of the collection.
 - `local N=to_ole_integer(10)` creates the integer value for OLE.
