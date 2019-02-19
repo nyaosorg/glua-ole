@@ -42,6 +42,7 @@ func gc(L Lua) int {
 		return lerror(L, "gc: not capsult_t instance")
 	}
 	if p.Data != nil {
+		// println("COM released")
 		p.Data.Release()
 		p.Data = nil
 	}
@@ -223,7 +224,7 @@ func iterNext(L Lua) int {
 		if err != nil {
 			L.Push(lua.LString(err.Error()))
 			return 2
-		}else{
+		} else {
 			return 1
 		}
 	}
@@ -419,7 +420,7 @@ func ToOleInteger(L Lua) int {
 func lerror(L Lua, s string) int {
 	L.Push(lua.LNil)
 	L.Push(lua.LString(s))
-	fmt.Fprintln(os.Stderr,s)
+	fmt.Fprintln(os.Stderr, s)
 	return 2
 }
 
