@@ -17,11 +17,16 @@ func main() {
 
 	err := L.DoString(`
 		local fsObj = create_object("Scripting.FileSystemObject")
-		local files = fsObj:GetFolder("C:\\"):_get("Files")
+		local folder= fsObj:GetFolder("C:\\")
+		local files = folder:_get("Files")
 		print("count=",files:_get("Count"))
 		for f in files:_iter() do
 			print(f:_get("Name"))
+			f:_release()
 		end
+		folder:_release()
+		files:_release()
+		fsObj:_release()
 	`)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
