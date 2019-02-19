@@ -326,6 +326,10 @@ func indexSub(L Lua, thisIndex int, nameIndex int) int {
 		L.Push(L.NewFunction(iter))
 		L.Push(lua.LNil)
 		return 2
+	case "_release":
+		L.Push(L.NewFunction(gc))
+		L.Push(lua.LNil)
+		return 2
 	default:
 		m := &methodT{Name: string(name)}
 		if ud, ok := L.Get(thisIndex).(*lua.LUserData); ok {
