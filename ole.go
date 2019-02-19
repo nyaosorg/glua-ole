@@ -395,6 +395,7 @@ func CreateObject(L Lua) int {
 	if err != nil {
 		return lerror(L, fmt.Sprintf("oleutil.CreateObject: %s", err.Error()))
 	}
+	defer unknown.Release()
 	obj, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
 		return lerror(L, fmt.Sprintf("unknown.QueryInterfce: %s", err.Error()))
