@@ -418,6 +418,7 @@ func ToOleInteger(L Lua) int {
 func lerror(L Lua, s string) int {
 	L.Push(lua.LNil)
 	L.Push(lua.LString(s))
+	fmt.Fprintln(os.Stderr,s)
 	return 2
 }
 
