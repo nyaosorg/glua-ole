@@ -177,6 +177,65 @@ func set(L Lua) int {
 	return 2
 }
 
+type enumeratorT struct {
+	newEnum *ole.VARIANT
+	enum    *ole.IEnumVARIANT
+}
+
+func (e *enumeratorT) Close() error {
+	e.enum.Release()
+	e.newEnum.Clear()
+	return nil
+}
+
+func iterGc(L Lua) int {
+	ud, ok := L.Get(1).(*lua.LUserData)
+	if !ok {
+		return 0
+	}
+	if ud.Value == nil {
+		return 0
+	}
+	e, ok := ud.Value.(*enumeratorT)
+	if !ok {
+		return 0
+	}
+	e.Close()
+	return 0
+}
+
+func iterNext(L Lua) int {
+	ud, ok := L.Get(1).(*lua.LUserData)
+	if !ok {
+		L.Push(lua.LNil)
+		return 1
+	}
+	e, ok := ud.Value.(*enumeratorT)
+	if !ok {
+		L.Push(lua.LNil)
+		return 1
+	}
+	itemVariant, length, err := e.enum.Next(1)
+	if err != nil || length <= 0 {
+		e.Close()
+		ud.Value = nil
+		L.Push(lua.LNil)
+		if err != nil {
+			L.Push(lua.LString(err.Error()))
+			return 2
+		}else{
+			return 1
+		}
+	}
+	itemLValue, err := variantToLValue(L, &itemVariant)
+	if err != nil {
+		L.Push(lua.LNil)
+		return 1
+	}
+	L.Push(itemLValue)
+	return 1
+}
+
 func iter(L Lua) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
@@ -192,28 +251,22 @@ func iter(L Lua) int {
 	}
 	enum, err := newEnum.ToIUnknown().IEnumVARIANT(ole.IID_IEnumVariant)
 	if err != nil {
+		newEnum.Clear()
 		return lerror(L, err.Error())
 	}
+	ud = L.NewUserData()
+	ud.Value = &enumeratorT{
+		enum:    enum,
+		newEnum: newEnum,
+	}
+	meta := L.NewTable()
+	L.SetField(meta, "__gc", L.NewFunction(iterGc))
+	L.SetMetatable(ud, meta)
 
-	L.Push(L.NewFunction(func(LL Lua) int {
-		itemVariant, length, err := enum.Next(1)
-		if err != nil || length <= 0 {
-			enum.Release()
-			newEnum.Clear()
-			LL.Push(lua.LNil)
-			return 1
-		}
-		itemLValue, err := variantToLValue(LL, &itemVariant)
-		if err != nil {
-			enum.Release()
-			newEnum.Clear()
-			LL.Push(lua.LNil)
-			return 1
-		}
-		L.Push(itemLValue)
-		return 1
-	}))
-	return 1
+	L.Push(L.NewFunction(iterNext))
+	L.Push(ud)
+	L.Push(lua.LNil)
+	return 3
 }
 
 func get(L Lua) int {
