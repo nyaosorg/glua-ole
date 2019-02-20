@@ -11,8 +11,6 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-type Lua = *lua.LState
-
 var initializedRequired = true
 
 type capsuleT struct {
@@ -24,7 +22,7 @@ type methodT struct {
 	Data *ole.IDispatch
 }
 
-func (c capsuleT) ToLValue(L Lua) lua.LValue {
+func (c capsuleT) ToLValue(L *lua.LState) lua.LValue {
 	ud := L.NewUserData()
 	ud.Value = &c
 	meta := L.NewTable()
@@ -35,7 +33,7 @@ func (c capsuleT) ToLValue(L Lua) lua.LValue {
 	return ud
 }
 
-func gc(L Lua) int {
+func gc(L *lua.LState) int {
 	ud := L.ToUserData(1)
 	p, ok := ud.Value.(*capsuleT)
 	if !ok {
@@ -49,7 +47,7 @@ func gc(L Lua) int {
 	return 0
 }
 
-func lua2interface(L Lua, index int) (interface{}, error) {
+func lua2interface(L *lua.LState, index int) (interface{}, error) {
 	valueTmp := L.Get(index)
 	if valueTmp == lua.LNil {
 		return nil, nil
@@ -76,7 +74,7 @@ func lua2interface(L Lua, index int) (interface{}, error) {
 	}
 }
 
-func lua2interfaceS(L Lua, start, end int) ([]interface{}, error) {
+func lua2interfaceS(L *lua.LState, start, end int) ([]interface{}, error) {
 	result := make([]interface{}, end-start+1)
 	for i := start; i <= end; i++ {
 		val, err := lua2interface(L, i)
@@ -89,7 +87,7 @@ func lua2interfaceS(L Lua, start, end int) ([]interface{}, error) {
 }
 
 // this:_call("METHODNAME",params...)
-func call1(L Lua) int {
+func call1(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok { // OBJECT_T
 		return lerror(L, "call1: not found object")
@@ -106,7 +104,7 @@ func call1(L Lua) int {
 }
 
 // this:METHODNAME(params...)
-func call2(L Lua) int {
+func call2(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return lerror(L, "call2: not found userdata for methodT")
@@ -133,7 +131,7 @@ func call2(L Lua) int {
 	return callCommon(L, obj.Data, method.Name)
 }
 
-func callCommon(L Lua, com1 *ole.IDispatch, name string) int {
+func callCommon(L *lua.LState, com1 *ole.IDispatch, name string) int {
 	count := L.GetTop()
 	params, err := lua2interfaceS(L, 3, count)
 	if err != nil {
@@ -155,7 +153,7 @@ func callCommon(L Lua, com1 *ole.IDispatch, name string) int {
 	}
 }
 
-func set(L Lua) int {
+func set(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return lerror(L, "set: the 1st argument is not usedata")
@@ -189,7 +187,7 @@ func (e *enumeratorT) Close() error {
 	return nil
 }
 
-func iterGc(L Lua) int {
+func iterGc(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return 0
@@ -205,7 +203,7 @@ func iterGc(L Lua) int {
 	return 0
 }
 
-func iterNext(L Lua) int {
+func iterNext(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		L.Push(lua.LNil)
@@ -237,7 +235,7 @@ func iterNext(L Lua) int {
 	return 1
 }
 
-func iter(L Lua) int {
+func iter(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return lerror(L, "get: 1st argument is not a userdata.")
@@ -270,7 +268,7 @@ func iter(L Lua) int {
 	return 3
 }
 
-func get(L Lua) int {
+func get(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return lerror(L, "get: 1st argument is not a userdata.")
@@ -305,7 +303,7 @@ func get(L Lua) int {
 	}
 }
 
-func indexSub(L Lua, thisIndex int, nameIndex int) int {
+func indexSub(L *lua.LState, thisIndex int, nameIndex int) int {
 	name, ok := L.Get(nameIndex).(lua.LString)
 	if !ok {
 		return lerror(L, "indexSub: not a string")
@@ -352,12 +350,12 @@ func indexSub(L Lua, thisIndex int, nameIndex int) int {
 	}
 }
 
-func index(L Lua) int {
+func index(L *lua.LState) int {
 	return indexSub(L, 1, 2)
 }
 
 // THIS.member.member
-func get2(L Lua) int {
+func get2(L *lua.LState) int {
 	ud, ok := L.Get(1).(*lua.LUserData)
 	if !ok {
 		return lerror(L, "get2: not a userdata")
@@ -382,8 +380,8 @@ func get2(L Lua) int {
 	}
 }
 
-// CreateObject creates Lua-Object to access COM
-func CreateObject(L Lua) int {
+// CreateObject creates *lua.LState-Object to access COM
+func CreateObject(L *lua.LState) int {
 	if initializedRequired {
 		ole.CoInitialize(0)
 		initializedRequired = false
@@ -406,7 +404,7 @@ func CreateObject(L Lua) int {
 }
 
 // ToOleInteger converts LNumber to integer which can be used by OLE parameter only.
-func ToOleInteger(L Lua) int {
+func ToOleInteger(L *lua.LState) int {
 	var value int
 	if v, ok := L.Get(-1).(lua.LNumber); ok {
 		value = int(v)
@@ -417,14 +415,14 @@ func ToOleInteger(L Lua) int {
 	return 1
 }
 
-func lerror(L Lua, s string) int {
+func lerror(L *lua.LState, s string) int {
 	L.Push(lua.LNil)
 	L.Push(lua.LString(s))
 	fmt.Fprintln(os.Stderr, s)
 	return 2
 }
 
-func variantToLValue(L Lua, v *ole.VARIANT) (lua.LValue, error) {
+func variantToLValue(L *lua.LState, v *ole.VARIANT) (lua.LValue, error) {
 	switch v.VT {
 	case ole.VT_EMPTY, ole.VT_NULL:
 		return lua.LNil, nil
