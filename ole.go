@@ -34,17 +34,25 @@ func (c capsuleT) ToLValue(L *lua.LState) lua.LValue {
 }
 
 func gc(L *lua.LState) int {
+	const noReceiverErr = "gc: no receiver"
+	if L.GetTop() < 1 {
+		return lerror(L, noReceiverErr)
+	}
 	ud := L.ToUserData(1)
+	if ud == nil {
+		return lerror(L, noReceiverErr)
+	}
 	p, ok := ud.Value.(*capsuleT)
 	if !ok {
-		return lerror(L, "gc: not capsult_t instance")
+		return lerror(L, noReceiverErr)
 	}
 	if p.Data != nil {
 		// println("COM released")
 		p.Data.Release()
 		p.Data = nil
 	}
-	return 0
+	L.Push(lua.LTrue)
+	return 1
 }
 
 func lua2interface(L *lua.LState, index int) (interface{}, error) {
