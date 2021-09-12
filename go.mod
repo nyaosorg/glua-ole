@@ -1,4 +1,4 @@
-module github.com/zetamatta/glua-ole
+module github.com/nyaosorg/glua-ole
 
 go 1.16
 
