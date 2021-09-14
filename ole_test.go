@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yuin/gopher-lua"
 	"github.com/nyaosorg/glua-ole"
+	"github.com/yuin/gopher-lua"
 )
 
 func newL() *lua.LState {

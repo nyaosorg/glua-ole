@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // Use `go run example2.go`
@@ -9,8 +10,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yuin/gopher-lua"
 	"github.com/nyaosorg/glua-ole"
+	"github.com/yuin/gopher-lua"
 )
 
 func main() {

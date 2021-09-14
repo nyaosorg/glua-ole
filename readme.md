@@ -15,7 +15,7 @@ import (
 	"os"
 
 	"github.com/yuin/gopher-lua"
-	"github.com/zetamatta/glua-ole"
+	"github.com/nyaosorg/glua-ole"
 )
 
 func main() {

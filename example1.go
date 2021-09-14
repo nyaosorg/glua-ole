@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -6,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yuin/gopher-lua"
 	"github.com/nyaosorg/glua-ole"
+	"github.com/yuin/gopher-lua"
 )
 
 func main() {
